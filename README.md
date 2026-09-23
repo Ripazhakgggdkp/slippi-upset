@@ -32,7 +32,7 @@ code-signed. Click **More info → Run anyway**, or build it yourself (below).
 
 ## Build from source
 
-Requires **Go 1.22+**. Standard library only, no dependencies.
+Requires **Go 1.22+**. The only dependency is [golang.org/x/sys](https://pkg.go.dev/golang.org/x/sys/windows) for Windows system calls.
 
 ```
 git clone https://github.com/diegoaranas/slippi-upset
@@ -78,7 +78,7 @@ replay folder once a second:
 - **Game ends:** Slippi fills in the replay's length header. It then reads the replay once to find the winner and looks up both players' ratings.
 
 It makes no network requests during a game and runs at below-normal CPU
-priority, so it doesn't affect Dolphin. It uses only the Go standard library.
+priority, so it doesn't affect Dolphin.
 
 Ratings come from the same API the slippi.gg profile pages use. It's not an
 official public API, so it could change without notice.

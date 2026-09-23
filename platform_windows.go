@@ -3,19 +3,15 @@
 package main
 
 import (
-	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
+// Not wrapped by x/sys/windows.
 var (
-	winmm    = syscall.NewLazyDLL("winmm.dll")
-	shell32  = syscall.NewLazyDLL("shell32.dll")
-	kernel32 = syscall.NewLazyDLL("kernel32.dll")
-
-	procPlaySound             = winmm.NewProc("PlaySoundW")
-	procSHGetFolderPath       = shell32.NewProc("SHGetFolderPathW")
-	procSetPriorityClass      = kernel32.NewProc("SetPriorityClass")
-	procGetConsoleProcessList = kernel32.NewProc("GetConsoleProcessList")
+	procPlaySound             = windows.NewLazySystemDLL("winmm.dll").NewProc("PlaySoundW")
+	procGetConsoleProcessList = windows.NewLazySystemDLL("kernel32.dll").NewProc("GetConsoleProcessList")
 )
 
 const (
@@ -26,7 +22,7 @@ const (
 
 // playFile plays a .wav without blocking.
 func playFile(path string) {
-	p, err := syscall.UTF16PtrFromString(path)
+	p, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return
 	}
@@ -35,17 +31,13 @@ func playFile(path string) {
 
 // documentsDir follows OneDrive redirection, unlike %USERPROFILE%\Documents.
 func documentsDir() string {
-	buf := make([]uint16, 260)
-	const csidlPersonal = 5 // My Documents
-	procSHGetFolderPath.Call(0, csidlPersonal, 0, 0, uintptr(unsafe.Pointer(&buf[0])))
-	return syscall.UTF16ToString(buf)
+	dir, _ := windows.KnownFolderPath(windows.FOLDERID_Documents, 0)
+	return dir
 }
 
 // lowerPriority makes the OS always favor Dolphin.
 func lowerPriority() {
-	h, _ := syscall.GetCurrentProcess()
-	const belowNormal = 0x4000
-	procSetPriorityClass.Call(uintptr(h), belowNormal)
+	windows.SetPriorityClass(windows.CurrentProcess(), windows.BELOW_NORMAL_PRIORITY_CLASS)
 }
 
 // ownsConsole is true when the console window was opened just for us (the .exe
