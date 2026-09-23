@@ -1,9 +1,8 @@
-//go:build !windows
+//go:build !windows && !linux
 
 package main
 
-// Slippi Launcher paths and sound playback are Windows-only. These stubs let the
-// replay parsing build and test on other systems.
+// Unsupported systems (e.g. macOS): stubs so the replay parsing still builds and tests.
 
 import (
 	"os"
@@ -12,9 +11,11 @@ import (
 
 func playFile(string) {}
 
-func documentsDir() string {
+func userJSONPaths() []string { return nil }
+
+func defaultReplayDir() string {
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Documents")
+	return filepath.Join(home, "Slippi")
 }
 
 func lowerPriority() {}

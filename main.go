@@ -4,9 +4,9 @@
 // Test it on an existing replay:        upset --test path/to/Game.slp
 // Re-download the sounds:               upset --get-sounds --volume 1
 //
-// Windows only. It checks the replay folder every second, reads the first 2 KB
-// of a replay when a game starts and the whole replay once after it ends, and
-// runs at below-normal CPU priority, so it shouldn't affect Dolphin.
+// Windows and Linux. It checks the replay folder every second, reads the first 2 KB
+// of a replay when a game starts and the whole replay once after it ends, so it
+// shouldn't affect Dolphin. On Windows it also runs at below-normal CPU priority.
 package main
 
 import (
@@ -15,10 +15,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -66,26 +67,30 @@ func inHere(p string) string {
 	return filepath.Join(here, filepath.FromSlash(p))
 }
 
+// launcherDir is Electron's userData folder: %APPDATA% on Windows, ~/.config on Linux.
 func launcherDir() string {
-	return filepath.Join(os.Getenv("APPDATA"), "Slippi Launcher")
+	config, _ := os.UserConfigDir()
+	return filepath.Join(config, "Slippi Launcher")
 }
 
 // detectCode reads your connect code from the account Slippi Launcher is logged into.
 func detectCode() (string, error) {
-	data, err := os.ReadFile(filepath.Join(launcherDir(), "netplay", "User", "Slippi", "user.json"))
-	var user struct {
-		ConnectCode string `json:"connectCode"` // only this field; the file also holds your login key
+	for _, p := range userJSONPaths() {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		var user struct {
+			ConnectCode string `json:"connectCode"` // only this field; the file also holds your login key
+		}
+		if json.Unmarshal(data, &user) == nil && user.ConnectCode != "" {
+			return user.ConnectCode, nil
+		}
 	}
-	if err == nil {
-		err = json.Unmarshal(data, &user)
-	}
-	if err != nil || user.ConnectCode == "" {
-		return "", errors.New("Couldn't find your connect code. Log in to Slippi Launcher, or set myCode in main.go.")
-	}
-	return user.ConnectCode, nil
+	return "", errors.New("Couldn't find your connect code. Log in to Slippi Launcher, or set myCode in main.go.")
 }
 
-// detectReplayDir returns Slippi Launcher's replay folder setting, or its default (Documents\Slippi).
+// detectReplayDir returns Slippi Launcher's replay folder setting, or its default.
 func detectReplayDir() string {
 	var s struct {
 		Settings struct {
@@ -97,7 +102,7 @@ func detectReplayDir() string {
 			return s.Settings.RootSlpPath
 		}
 	}
-	return filepath.Join(documentsDir(), "Slippi")
+	return defaultReplayDir()
 }
 
 // ----------------------------------------------------------------- main ----
@@ -231,24 +236,29 @@ func announceOpponent(opp string) {
 	play(sound)
 }
 
-var monthDir = regexp.MustCompile(`^\d{4}-\d{2}$`)
+// Ishiiruka Dolphin writes YYYY-MM month folders; mainline Dolphin writes YYYY-MM-Mainline.
+var monthDir = regexp.MustCompile(`^(\d{4}-\d{2})(-Mainline)?$`)
 
-// replayDirs returns the root folder plus the two newest YYYY-MM month folders. Other
-// subfolders (Spectate, anything the user made) are ignored so they can't crowd out the
-// current month.
+// replayDirs returns the root folder plus the month folders for the two newest months.
+// Other subfolders (Spectate, anything the user made) are ignored so they can't crowd
+// out the current month.
 func replayDirs() ([]string, error) {
 	entries, err := os.ReadDir(replayDir)
 	if err != nil {
 		return nil, err
 	}
-	var months []string
+	byMonth := map[string][]string{}
 	for _, e := range entries {
-		if e.IsDir() && monthDir.MatchString(e.Name()) {
-			months = append(months, filepath.Join(replayDir, e.Name()))
+		if m := monthDir.FindStringSubmatch(e.Name()); m != nil && e.IsDir() {
+			byMonth[m[1]] = append(byMonth[m[1]], filepath.Join(replayDir, e.Name()))
 		}
 	}
-	sort.Strings(months)
-	return append([]string{replayDir}, months[max(0, len(months)-2):]...), nil
+	months := slices.Sorted(maps.Keys(byMonth))
+	dirs := []string{replayDir}
+	for _, m := range months[max(0, len(months)-2):] {
+		dirs = append(dirs, byMonth[m]...)
+	}
+	return dirs, nil
 }
 
 // ensureSounds downloads the announcer clips if any are missing.

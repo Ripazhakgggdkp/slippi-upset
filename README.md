@@ -21,8 +21,11 @@ Ratings come from slippi.gg, so it works for ranked and unranked games alike.
 2. Put it in its own folder. It saves its sounds and your record next to itself.
 3. Double-click it before you play and leave the window open.
 
-You need Windows and Slippi Launcher (logged in). Your connect code and replay
-folder are detected automatically.
+You need Windows or Linux and Slippi Launcher (logged in). Your connect code and
+replay folder are detected automatically.
+
+On Linux there's no prebuilt download yet; build it (below) and run `./upset`.
+Sounds play through `pw-play`, `paplay` or `aplay`, whichever is installed.
 
 On first run it downloads the announcer clips. They're Nintendo's, so they aren't
 included here; it fetches the community rips from [The Sounds Resource](https://sounds.spriters-resource.com/gamecube/ssbm/).
@@ -37,12 +40,11 @@ Requires **Go 1.26+**. The only dependency is [golang.org/x/sys](https://pkg.go.
 ```
 git clone https://github.com/diegoaranas/slippi-upset
 cd slippi-upset
-go build -o upset.exe .
-upset.exe
+go build .
 ```
 
-To build the Windows .exe from macOS or Linux:
-`GOOS=windows GOARCH=amd64 go build -o upset.exe .`
+That builds `upset.exe` on Windows or `upset` on Linux. To build the Windows .exe
+from another system: `GOOS=windows GOARCH=amd64 go build .`
 
 The first run downloads the clips to `sounds/` at half volume. To re-download
 them at full volume: `upset --get-sounds --volume 1`.
@@ -66,7 +68,7 @@ Everything is at the top of `main.go` (rebuild after changing it):
 - `myCode` / `replayDir`: detected from Slippi Launcher. Set them only if detection fails or you keep replays somewhere unusual.
 - `sound*`: any `.wav` file works. `soundConnect` plays for every *other* new opponent; it's off by default (try `sounds/versus.wav`).
 
-Your record is kept in `record.json` next to the .exe. It starts at 0, so
+Your record is kept in `record.json` next to the program. It starts at 0, so
 your first win sets it. Delete the file to reset.
 
 ## How it works

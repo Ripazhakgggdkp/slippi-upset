@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -103,5 +104,25 @@ func TestScaleWAV(t *testing.T) {
 	n := len(out)
 	if a, b := int16(binary.LittleEndian.Uint16(out[n-4:])), int16(binary.LittleEndian.Uint16(out[n-2:])); a != 500 || b != -500 {
 		t.Errorf("samples = %d, %d; want 500, -500", a, b)
+	}
+}
+
+func TestReplayDirs(t *testing.T) {
+	replayDir = t.TempDir()
+	for _, d := range []string{"2026-07", "2026-08", "2026-08-Mainline", "2026-09-Mainline", "Spectate"} {
+		if err := os.Mkdir(filepath.Join(replayDir, d), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dirs, err := replayDirs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, d := range dirs[1:] {
+		got = append(got, filepath.Base(d))
+	}
+	if want := "2026-08 2026-08-Mainline 2026-09-Mainline"; strings.Join(got, " ") != want || dirs[0] != replayDir {
+		t.Errorf("replayDirs = %v; want root + %s", dirs, want)
 	}
 }
