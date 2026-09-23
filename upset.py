@@ -1,8 +1,7 @@
 """
 Slippi upset alert: plays a sound when you beat someone rated higher than you.
 
-First run:                            python get_sounds.py
-Run it in a terminal while playing:   python upset.py
+Run it in a terminal while playing:   python upset.py   (or double-click upset.exe)
 Test it on an existing replay:        python upset.py --test path/to/Game.slp
 
 Windows only, standard library only. It checks the replay folder every second,
@@ -20,7 +19,8 @@ import urllib.request
 import winsound
 
 # ---------------------------------------------------------------- config ----
-HERE = os.path.dirname(os.path.abspath(__file__))
+# Next to the .exe when packaged with PyInstaller, otherwise next to this file.
+HERE = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 MY_CODE = None      # e.g. "ABCD#123"; None = read it from Slippi Launcher
 REPLAY_DIR = None   # e.g. r"D:\Replays"; None = read it from Slippi Launcher's settings
 POLL_SECONDS = 1
@@ -292,7 +292,12 @@ def watch():
     missing = [os.path.basename(s) for s in (SOUND_RECORD, SOUND_PEAK, SOUND_CURRENT, SOUND_WIN,
                                              SOUND_CHALLENGER, SOUND_CONNECT, SOUND_QUIT) if s and not os.path.exists(s)]
     if missing:
-        print(f"Missing sounds: {', '.join(missing)}. Run `python get_sounds.py` first.")
+        print(f"Missing sounds: {', '.join(missing)}. Downloading them now (one time)...")
+        try:
+            import get_sounds
+            get_sounds.download(os.path.join(HERE, "sounds"))
+        except Exception as ex:
+            print(f"Couldn't download the sounds ({ex}). Alerts for missing files will be silent.")
     print(f"Watching {REPLAY_DIR} for new games as {MY_CODE}... (Ctrl+C to stop)")
     while True:
         try:
@@ -320,13 +325,21 @@ def watch():
 
 
 if __name__ == "__main__":
-    MY_CODE = MY_CODE or detect_code()
-    REPLAY_DIR = REPLAY_DIR or detect_replay_dir()
-    if len(sys.argv) == 3 and sys.argv[1] == "--test":
-        handle(sys.argv[2])
-        time.sleep(3)  # let the async sound finish
-    else:
-        try:
+    sys.stdout.reconfigure(line_buffering=True)   # show each line immediately, even when piped
+    try:
+        MY_CODE = MY_CODE or detect_code()
+        REPLAY_DIR = REPLAY_DIR or detect_replay_dir()
+        if not os.path.isdir(REPLAY_DIR):
+            sys.exit(f"Replay folder not found: {REPLAY_DIR}\nSet REPLAY_DIR in upset.py, or check Slippi Launcher's replay settings.")
+        if len(sys.argv) == 3 and sys.argv[1] == "--test":
+            handle(sys.argv[2])
+            time.sleep(3)  # let the async sound finish
+        else:
             watch()
-        except KeyboardInterrupt:
-            pass
+    except KeyboardInterrupt:
+        pass
+    except SystemExit as ex:
+        print(ex)
+        if getattr(sys, "frozen", False):   # double-clicked .exe: keep the window open to show the error
+            input("Press Enter to close.")
+        sys.exit(1)

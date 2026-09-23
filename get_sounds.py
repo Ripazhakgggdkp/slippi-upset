@@ -17,7 +17,8 @@ import urllib.request
 import wave
 import zipfile
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# Next to the .exe when packaged with PyInstaller, otherwise next to this file.
+HERE = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SITE = "https://sounds.spriters-resource.com"
 UA = {"User-Agent": "Mozilla/5.0"}
 
@@ -60,15 +61,13 @@ def scale(wav_bytes, volume):
     return out.getvalue()
 
 
-def main():
-    volume = float(sys.argv[sys.argv.index("--volume") + 1]) if "--volume" in sys.argv else 0.5
-    out_dir = os.path.join(HERE, "sounds")
+def download(out_dir, volume=0.5):
     os.makedirs(out_dir, exist_ok=True)
     for page, wanted in CLIPS.items():
         html = fetch(SITE + page).decode("utf-8", "replace")
         m = re.search(r'href="(/media/assets/[^"]+\.zip[^"]*)"', html)
         if not m:
-            sys.exit(f"Couldn't find the download link on {SITE + page}; the site may have changed.")
+            raise RuntimeError(f"Couldn't find the download link on {SITE + page}; the site may have changed.")
         zip_path = m.group(1)
         print(f"Downloading {SITE + zip_path.split('?')[0]} ...")
         zf = zipfile.ZipFile(io.BytesIO(fetch(SITE + zip_path)))
@@ -84,4 +83,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    vol = float(sys.argv[sys.argv.index("--volume") + 1]) if "--volume" in sys.argv else 0.5
+    download(os.path.join(HERE, "sounds"), vol)

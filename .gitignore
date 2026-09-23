@@ -16,3 +16,8 @@ record.json
 
 # Nintendo audio: not redistributed, fetched locally by get_sounds.py
 sounds/
+
+# PyInstaller output
+build/
+dist/
+*.spec
