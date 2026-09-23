@@ -200,9 +200,12 @@ func play(sound string) {
 	if sound == "" {
 		return
 	}
-	if p := inHere(sound); fileExists(p) {
-		playFile(p)
+	p := inHere(sound)
+	if !fileExists(p) {
+		fmt.Printf("  (no sound: %s is missing; run upset --get-sounds)\n", p)
+		return
 	}
+	playFile(p)
 }
 
 func fileExists(p string) bool {
@@ -248,11 +251,8 @@ func replayDirs() ([]string, error) {
 	return append([]string{replayDir}, months[max(0, len(months)-2):]...), nil
 }
 
-func watch() {
-	lowerPriority()
-	started := time.Now()
-	done, seen := map[string]bool{}, map[string]bool{}
-	lastOpp := ""
+// ensureSounds downloads the announcer clips if any are missing.
+func ensureSounds() {
 	var missing []string
 	for _, s := range []string{soundRecord, soundPeak, soundCurrent, soundWin, soundChallenger, soundConnect, soundQuit} {
 		if s != "" && !fileExists(inHere(s)) {
@@ -265,6 +265,13 @@ func watch() {
 			fmt.Printf("Couldn't download the sounds (%v). Alerts for missing files will be silent.\n", err)
 		}
 	}
+}
+
+func watch() {
+	lowerPriority()
+	started := time.Now()
+	done, seen := map[string]bool{}, map[string]bool{}
+	lastOpp := ""
 	fmt.Printf("Watching %s for new games as %s... (Ctrl+C to stop)\n", replayDir, myCode)
 	for {
 		dirs, err := replayDirs()
@@ -347,6 +354,7 @@ func main() {
 	if info, err := os.Stat(replayDir); err != nil || !info.IsDir() {
 		fail(fmt.Sprintf("Replay folder not found: %s\nSet replayDir in main.go, or check Slippi Launcher's replay settings.", replayDir))
 	}
+	ensureSounds()
 	if *test != "" {
 		if err := handle(*test); err != nil {
 			fail(err.Error())
