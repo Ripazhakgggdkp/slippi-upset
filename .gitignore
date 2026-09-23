@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+.*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local state: your personal best-win record, rewritten while playing
+record.json
+
+# Nintendo audio: not redistributed, fetched locally by get_sounds.py
+sounds/
