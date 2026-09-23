@@ -21,11 +21,12 @@ Ratings come from slippi.gg, so it works for ranked and unranked games alike.
 2. Put it in its own folder. It saves its sounds and your record next to itself.
 3. Double-click it before you play and leave the window open.
 
-You need Windows or Linux and Slippi Launcher (logged in). Your connect code and
-replay folder are detected automatically.
+You need Windows, Linux or macOS and Slippi Launcher (logged in). Your connect
+code and replay folder are detected automatically.
 
-On Linux there's no prebuilt download yet; build it (below) and run `./upset`.
-Sounds play through `pw-play`, `paplay` or `aplay`, whichever is installed.
+On Linux and macOS there's no prebuilt download yet; build it (below) and run
+`./upset`. On Linux, sounds play through `pw-play`, `paplay` or `aplay`, whichever
+is installed; on macOS through `afplay`.
 
 On first run it downloads the announcer clips. They're Nintendo's, so they aren't
 included here; it fetches the community rips from [The Sounds Resource](https://sounds.spriters-resource.com/gamecube/ssbm/).
@@ -43,7 +44,7 @@ cd slippi-upset
 go build .
 ```
 
-That builds `upset.exe` on Windows or `upset` on Linux. To build the Windows .exe
+That builds `upset.exe` on Windows or `upset` on Linux and macOS. To build the Windows .exe
 from another system: `GOOS=windows GOARCH=amd64 go build .`
 
 The first run downloads the clips to `sounds/` at half volume. To re-download

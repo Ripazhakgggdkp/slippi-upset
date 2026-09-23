@@ -4,9 +4,9 @@
 // Test it on an existing replay:        upset --test path/to/Game.slp
 // Re-download the sounds:               upset --get-sounds --volume 1
 //
-// Windows and Linux. It checks the replay folder every second, reads the first 2 KB
+// Windows, Linux and macOS. It checks the replay folder every second, reads the first 2 KB
 // of a replay when a game starts and the whole replay once after it ends, so it
-// shouldn't affect Dolphin. On Windows it also runs at below-normal CPU priority.
+// shouldn't affect Dolphin. It also runs at lower CPU priority (except on Linux).
 package main
 
 import (
@@ -67,7 +67,8 @@ func inHere(p string) string {
 	return filepath.Join(here, filepath.FromSlash(p))
 }
 
-// launcherDir is Electron's userData folder: %APPDATA% on Windows, ~/.config on Linux.
+// launcherDir is Electron's userData folder: %APPDATA% on Windows, ~/.config on Linux,
+// ~/Library/Application Support on macOS.
 func launcherDir() string {
 	config, _ := os.UserConfigDir()
 	return filepath.Join(config, "Slippi Launcher")
