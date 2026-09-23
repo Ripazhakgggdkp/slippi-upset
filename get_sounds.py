@@ -3,7 +3,7 @@ Download the Melee announcer clips used by upset.py into sounds/.
 
 The clips are Nintendo's, so they aren't included in this repo. This fetches the
 community rips from The Sounds Resource (https://sounds.spriters-resource.com),
-pulls out the six clips, and saves them at reduced volume.
+pulls out the seven clips, and saves them at reduced volume.
 
     python get_sounds.py              # half volume (default)
     python get_sounds.py --volume 1   # original volume
@@ -29,6 +29,7 @@ CLIPS = {
         "nr_1p01.dsp.wav": "congratulations.wav",  # "Congratulations!"
         "nr_1p06.dsp.wav": "complete.wav",         # "Complete!"
         "nr_1p0a.dsp.wav": "versus.wav",           # "Versus!"
+        "nr_vs00.dsp.wav": "no_contest.wav",       # "No contest!"
     },
     "/gamecube/ssbm/asset/394097/": {          # Fanfares
         "s_newcom.hps.wav": "challenger.wav",      # Challenger Approaching jingle

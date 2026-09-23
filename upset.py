@@ -34,6 +34,8 @@ SOUND_WIN = os.path.join(HERE, "sounds", "complete.wav")          # "Complete!" 
 # First game vs a new opponent:
 SOUND_CHALLENGER = os.path.join(HERE, "sounds", "challenger.wav") # Challenger Approaching jingle - they're rated higher
 SOUND_CONNECT = None                                              # everyone else (e.g. sounds/versus.wav); None = silent
+# Opponent quits (resets) mid-game:
+SOUND_QUIT = os.path.join(HERE, "sounds", "no_contest.wav")      # "No contest!"
 
 RECORD_FILE = os.path.join(HERE, "record.json")                   # your best win so far
 # -----------------------------------------------------------------------------
@@ -125,7 +127,7 @@ def raw_length(path):
 
 
 def parse_game(path):
-    """Returns (codes_by_port, winner_port or None)."""
+    """Returns (codes_by_port, winner_port or None, quitter_port or None)."""
     data = open(path, "rb").read()
     n = int.from_bytes(data[11:15], "big")
     raw = data[15:15 + n]
@@ -157,20 +159,21 @@ def parse_game(path):
         pos += 1 + size
 
     if end is None or len(stocks) != 2:
-        return codes, None                         # crashed/doubles/etc.
-    if len(end) >= 2 and struct.unpack(">b", end[1:2])[0] != -1:
-        return codes, None                         # someone quit (LRAS): don't count it
+        return codes, None, None                   # crashed/doubles/etc.
+    quitter = struct.unpack(">b", end[1:2])[0] if len(end) >= 2 else -1
+    if quitter != -1:
+        return codes, None, quitter                # someone quit (LRAS): no winner
     if len(end) >= 6:                              # newer replays store placements directly
         places = struct.unpack(">4b", end[2:6])
         for port in stocks:
             if places[port] == 0:
-                return codes, port
+                return codes, port, None
     a, b = stocks
     if stocks[a] != stocks[b]:
-        return codes, max(stocks, key=lambda p: stocks[p])
+        return codes, max(stocks, key=lambda p: stocks[p]), None
     if percent[a] != percent[b]:                   # timeout with equal stocks
-        return codes, min(percent, key=lambda p: percent[p])
-    return codes, None
+        return codes, min(percent, key=lambda p: percent[p]), None
+    return codes, None, None
 
 
 # ----------------------------------------------------------------- main ----
@@ -179,15 +182,19 @@ def fmt(x):
 
 
 def handle(path):
-    codes, winner = parse_game(path)
+    codes, winner, quitter = parse_game(path)
     me = next((p for p, c in codes.items() if c and c.upper() == MY_CODE.upper()), None)
     opp = next((c for p, c in codes.items() if p != me and c), None)
     name = os.path.basename(path)
     if me is None or opp is None:
         print(f"{name}: not a 1v1 netplay game with you in it, skipping")
         return
+    if quitter is not None and quitter != me:
+        print(f"{name}: vs {opp}: they quit  >>> NO CONTEST")
+        play(SOUND_QUIT)
+        return
     if winner != me:
-        print(f"{name}: vs {opp}: {'loss' if winner is not None else 'no result'}")
+        print(f"{name}: vs {opp}: {'loss' if winner is not None else 'you quit' if quitter == me else 'no result'}")
         return
 
     my_cur, my_peak = fetch_ratings(MY_CODE)
@@ -283,7 +290,7 @@ def watch():
     done, seen = set(), set()
     last_opp = None
     missing = [os.path.basename(s) for s in (SOUND_RECORD, SOUND_PEAK, SOUND_CURRENT, SOUND_WIN,
-                                             SOUND_CHALLENGER, SOUND_CONNECT) if s and not os.path.exists(s)]
+                                             SOUND_CHALLENGER, SOUND_CONNECT, SOUND_QUIT) if s and not os.path.exists(s)]
     if missing:
         print(f"Missing sounds: {', '.join(missing)}. Run `python get_sounds.py` first.")
     print(f"Watching {REPLAY_DIR} for new games as {MY_CODE}... (Ctrl+C to stop)")

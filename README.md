@@ -10,8 +10,9 @@ play, and it reacts to who you're playing and whether you beat them:
 | You beat someone whose best season beats your best season | "Wow! Incredible!" |
 | You beat someone whose current rating beats yours | "Congratulations!" |
 | Any other win | "Complete!" |
+| Your opponent quits (resets) mid-game | "No contest!" |
 
-Only the first matching win sound plays. Losses, quits and doubles are silent.
+Only the first matching win sound plays. Losses, your own quits and doubles are silent.
 Ratings come from slippi.gg, so it works for ranked and unranked games alike.
 
 ## Setup
@@ -26,7 +27,7 @@ python get_sounds.py
 
 The announcer clips are Nintendo's, so they aren't in this repo. `get_sounds.py`
 downloads the community rips from [The Sounds Resource](https://sounds.spriters-resource.com/gamecube/ssbm/)
-and saves the six clips to `sounds/` at half volume (`--volume 1` for full).
+and saves the seven clips to `sounds/` at half volume (`--volume 1` for full).
 
 ## Usage
 
