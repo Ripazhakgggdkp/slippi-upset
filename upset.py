@@ -12,6 +12,7 @@ after it ends, and runs at below-normal CPU priority, so it shouldn't affect Dol
 import ctypes
 import json
 import os
+import re
 import struct
 import sys
 import time
@@ -268,9 +269,11 @@ def start_codes(path):
 
 
 def replay_dirs():
-    """The root folder plus the newest month subfolders (Slippi uses YYYY-MM folders)."""
-    subs = sorted(e.path for e in os.scandir(REPLAY_DIR) if e.is_dir())
-    return [REPLAY_DIR] + subs[-2:]
+    """The root folder plus the two newest YYYY-MM month folders. Other subfolders
+    (Spectate, anything the user made) are ignored so they can't crowd out the current month."""
+    months = sorted(e.path for e in os.scandir(REPLAY_DIR)
+                    if e.is_dir() and re.fullmatch(r"\d{4}-\d{2}", e.name))
+    return [REPLAY_DIR] + months[-2:]
 
 
 def watch():
