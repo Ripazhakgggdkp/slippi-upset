@@ -32,7 +32,7 @@ code-signed. Click **More info → Run anyway**, or build it yourself (below).
 
 ## Build from source
 
-Requires **Go 1.22+**. The only dependency is [golang.org/x/sys](https://pkg.go.dev/golang.org/x/sys/windows) for Windows system calls.
+Requires **Go 1.26+**. The only dependency is [golang.org/x/sys](https://pkg.go.dev/golang.org/x/sys/windows) for Windows system calls.
 
 ```
 git clone https://github.com/diegoaranas/slippi-upset
