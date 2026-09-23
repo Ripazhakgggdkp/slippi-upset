@@ -23,8 +23,6 @@ func postFrame(port, stocks byte, pct float32) []byte {
 	return ev
 }
 
-func ubjStr(s string) []byte { return append([]byte{'U', byte(len(s))}, s...) }
-
 // buildReplay writes a minimal 1v1 replay between ports 0 and 1.
 func buildReplay(t *testing.T, stocks0, stocks1 byte, pct0, pct1 float32, end []byte) string {
 	t.Helper()
@@ -50,20 +48,7 @@ func buildReplay(t *testing.T, stocks0, stocks1 byte, pct0, pct1 float32, end []
 	f.Write(header)
 	binary.Write(&f, binary.BigEndian, uint32(raw.Len()))
 	f.Write(raw.Bytes())
-	f.WriteString("U\x08metadata{")
-	f.Write(ubjStr("players"))
-	f.WriteString("{")
-	for port, code := range []string{"ABCD#123", "EFGH#456"} {
-		f.Write(ubjStr(string(rune('0' + port))))
-		f.WriteString("{")
-		f.Write(ubjStr("names"))
-		f.WriteString("{")
-		f.Write(ubjStr("code"))
-		f.WriteString("S")
-		f.Write(ubjStr(code))
-		f.WriteString("}}")
-	}
-	f.WriteString("}}}")
+	f.WriteString("U\x08metadata{}}")
 
 	path := filepath.Join(t.TempDir(), "Game.slp")
 	if err := os.WriteFile(path, f.Bytes(), 0o644); err != nil {
