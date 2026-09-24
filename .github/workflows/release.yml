@@ -1,0 +1,52 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go vet ./... && GOOS=windows go vet ./... && GOOS=darwin go vet ./...
+      - run: go test ./...
+
+  release:
+    needs: test
+    # Only the upstream repo publishes; forks and PRs just run the tests.
+    if: github.event_name == 'push' && github.repository == 'diegoaranas/slippi-upset'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      # Picks the next version from the Conventional Commits since the last tag,
+      # then tags it and creates the GitHub release. No release-worthy commits = no release.
+      - id: semrel
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: steps.semrel.outputs.version != ''
+        run: git fetch --tags --force
+
+      # Builds all platforms and attaches them to that release.
+      - if: steps.semrel.outputs.version != ''
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
